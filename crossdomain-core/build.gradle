@@ -1,0 +1,20 @@
+group 'com.marklogic.solutions'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.springframework.batch:spring-batch-core:3.0.7.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-batch:+'
+    compile 'org.springframework:spring-core:+'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.springframework', name: 'spring-test', version: '+'
+}
