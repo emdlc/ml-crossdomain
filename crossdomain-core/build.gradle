@@ -12,6 +12,11 @@ repositories {
 }
 
 dependencies {
+
+	compile group: 'org.jdom', name: 'jdom2', version: '+'
+	compile group: 'log4j', name: 'log4j', version: '+'
+	compile group: 'com.marklogic', name: 'marklogic-xcc', version: "+"
+    
     compile 'org.springframework.batch:spring-batch-core:3.0.7.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-batch:+'
     compile 'org.springframework:spring-core:+'
