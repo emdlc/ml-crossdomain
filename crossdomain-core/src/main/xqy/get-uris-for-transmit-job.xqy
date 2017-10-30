@@ -4,4 +4,4 @@ documents to be transmitted
 :)
 
 let $uris := cts:uris( (), ('limit=200'), () )
-return $uris[150 to fn:count($uris)]
+return $uris

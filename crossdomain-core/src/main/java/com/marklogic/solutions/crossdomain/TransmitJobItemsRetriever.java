@@ -22,7 +22,7 @@ import com.marklogic.xcc.types.XdmVariable;
 
 public class TransmitJobItemsRetriever implements JobItemsRetriever<String> {
 
-	private static final String xccURL = "xcc://admin:admin@localhost:9102";
+	private static final String xccURL = "xcc://user:password@localhost:9102";
 	
 	private ArrayBlockingQueue<String> queue;
 	

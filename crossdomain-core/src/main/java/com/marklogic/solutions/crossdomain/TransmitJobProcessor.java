@@ -32,8 +32,8 @@ import com.marklogic.xcc.types.XdmVariable;
 public class TransmitJobProcessor extends JobProcessor<String> {
 
 	private static final int BATCHSIZE = 5;
-	private static final String landingZoneDir = "/Users/jkendric/dev/tmp/cds-landingzone/";
-	private static final String xccURL = "xcc://admin:admin@localhost:9102";
+	private static final String landingZoneDir = "/dev/tmp/cds-landingzone/";
+	private static final String xccURL = "xcc://user:password@localhost:9102";
 
 	@Override
 	public JobResult executeJob() {
