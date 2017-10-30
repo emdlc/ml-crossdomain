@@ -16,8 +16,8 @@ public class SimpleJobRunManager<E> {
     public JobResult runJob() {
         processItemQueue = retriever.retrieve(null);
         processor.setQueue(processItemQueue);
-        processor.startJob();
-        return processor.jobResult;
+        JobResult jobResult = processor.executeJob();
+        return jobResult;
     }
 
 }
