@@ -15,23 +15,19 @@ public class SimpleJobTest {
         }
     }
 
-    class NumberJobItemsRetriever implements JobItemsRetriever<NumberJobItem> {
-
-        ArrayBlockingQueue<NumberJobItem> numberQueue = new ArrayBlockingQueue<NumberJobItem>(10);
-
-        @Override
-        public ArrayBlockingQueue<NumberJobItem> retrieve(Map<String, Object> params) {
-            numberQueue.add(new NumberJobItem(6));
-            numberQueue.add(new NumberJobItem(5));
-            numberQueue.add(new NumberJobItem(4));
-            numberQueue.add(new NumberJobItem(3));
-            return numberQueue;
-        }
-    }
 
     class AddOneJob extends JobProcessor<NumberJobItem> {
 
         public AddOneJob() {
+        }
+
+        @Override
+        public ArrayBlockingQueue<NumberJobItem> retrieve(Map<String, Object> params) {
+            queue.add(new NumberJobItem(6));
+            queue.add(new NumberJobItem(5));
+            queue.add(new NumberJobItem(4));
+            queue.add(new NumberJobItem(3));
+            return queue;
         }
 
         @Override
@@ -47,7 +43,7 @@ public class SimpleJobTest {
 
     @Test
     public void runAddOneJob() {
-        SimpleJobRunManager mgr = new SimpleJobRunManager(new NumberJobItemsRetriever(), new AddOneJob());
+        SimpleJobRunManager mgr = new SimpleJobRunManager(new AddOneJob());
         JobResult result = mgr.runJob();
         System.out.println("result=" + result.getResultOutput());
     }
