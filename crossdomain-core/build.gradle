@@ -20,10 +20,10 @@ dependencies {
     compile "commons-io:commons-io:+"
     compile 'commons-lang:commons-lang:+'
     
-    compile 'org.springframework.batch:spring-batch-core:3.0.7.RELEASE'
+    compile 'org.springframework.batch:spring-batch-core:+'
     compile 'org.springframework.boot:spring-boot-starter-batch:+'
-    compile 'org.springframework:spring-core:+'
+    compile 'org.springframework:spring-core:4.3.12.RELEASE'
         
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:+'
     testCompile 'org.springframework.boot:spring-boot-starter-test:+'
 }
