@@ -1,5 +1,7 @@
-package com.marklogic.solutions.crossdomain;
+package com.marklogic.solutions.crossdomain.jobs.transmit;
 
+import com.marklogic.solutions.crossdomain.JobProcessor;
+import com.marklogic.solutions.crossdomain.JobResult;
 import com.marklogic.solutions.utils.ClasspathUtils;
 import com.marklogic.xcc.*;
 import com.marklogic.xcc.exceptions.RequestException;

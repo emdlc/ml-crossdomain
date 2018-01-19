@@ -1,5 +1,6 @@
 package com.marklogic.solutions.crossdomain;
 
+import com.marklogic.solutions.crossdomain.jobs.transmit.TransmitJobProcessor;
 import org.junit.Test;
 
 public class TransmitJobTest {

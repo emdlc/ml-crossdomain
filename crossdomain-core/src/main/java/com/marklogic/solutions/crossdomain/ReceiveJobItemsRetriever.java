@@ -1,34 +1,10 @@
 package com.marklogic.solutions.crossdomain;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
-
-import com.marklogic.xcc.ContentSource;
-import com.marklogic.xcc.ContentSourceFactory;
-import com.marklogic.xcc.Request;
-import com.marklogic.xcc.ResultSequence;
-import com.marklogic.xcc.Session;
-import com.marklogic.xcc.ValueFactory;
-import com.marklogic.xcc.types.XName;
-import com.marklogic.xcc.types.XdmValue;
-import com.marklogic.xcc.types.XdmVariable;
-
-public class ReceiveJobItemsRetriever implements JobItemsRetriever<String>{
+public class ReceiveJobItemsRetriever {
 
 	private static final String landingZoneDir = "c:/Temp/landingzone/low2high/";
 	
@@ -38,7 +14,7 @@ public class ReceiveJobItemsRetriever implements JobItemsRetriever<String>{
 		this.queue = new ArrayBlockingQueue<String>(10000);
 	}
 
-	@Override
+
 	public ArrayBlockingQueue<String> retrieve(Map<String, Object> params) {
 		// get files and add them to the queue
 		System.out.println("Testing");
