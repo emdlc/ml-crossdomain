@@ -9,6 +9,7 @@ import com.marklogic.xcc.exceptions.XccConfigException;
 import com.marklogic.xcc.types.XName;
 import com.marklogic.xcc.types.XdmValue;
 import com.marklogic.xcc.types.XdmVariable;
+
 import org.apache.commons.io.IOUtils;
 
 import java.io.FileNotFoundException;
@@ -23,16 +24,17 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class TransmitJobProcessor extends JobProcessor<String> {
-
-	private static final int BATCHSIZE = 5;
-	private static final String landingZoneDir = "/dev/tmp/cds-landingzone/";
-	private static final String xccURL = "xcc://user:password@localhost:9102";
-
+	
+	private int BATCHSIZE;
+	private String landingZoneDir;
+	private String xccURL;
+	
 	@Override
 	public JobResult executeJob() {
 
@@ -114,6 +116,37 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 
 	public TransmitJobProcessor() {
 		super();
+		
+		Properties prop = new Properties();
+		InputStream input = null;
+		
+		try {			
+			String filename = "transmitJob.properties";
+			input = TransmitJobProcessor.class.getClassLoader().getResourceAsStream(filename);
+    		if(input==null) {
+    	            System.out.println("unable to find file:" + filename);
+    		    return;
+    		}
+			
+			// load a properties file
+			prop.load(input);
+			
+			this.BATCHSIZE=Integer.parseInt(prop.getProperty("zip.maxFileCount"));
+			this.landingZoneDir=prop.getProperty("zip.dir");
+			this.xccURL=prop.getProperty("ml.xcc.url");
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (input != null) {
+					try {
+						input.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+			}
+		}
+
 	}
 
 	@Override
