@@ -44,6 +44,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 	private int BATCHSIZE;
 	private String landingZoneDir;
 	private String xccURL;
+	private String collection;
 	
 	@Override
 	public JobResult executeJob() {
@@ -87,9 +88,9 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 				//get the unique identifier to use as the URI
 				String mluri = root.getChildText("UniqueIdentifier", cds);	
 				//write the xml document to the database
-				String[] collection = new String[] {"low2high"};
+				String[] coll = new String[] {collection};
 				ContentCreateOptions createOptions = new ContentCreateOptions();
-				createOptions.setCollections(collection);
+				createOptions.setCollections((coll));
 				createOptions.setFormatXml();
 				DOMOutputter outputter = new DOMOutputter();
 				Content content = null;
@@ -100,7 +101,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 				}
 				URI uri = null;
 				try {
-					uri = new URI("xcc://admin:password@localhost:8201");
+					uri = new URI(xccURL);
 				} catch (URISyntaxException e) {
 					e.printStackTrace();
 				}
@@ -123,55 +124,55 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 		JobResult jobResult = new JobResult();
 		jobResult.setStart(jobStartDate);
 		jobResult.setEnd(new Date());
-		jobResult.setResultOutput("Completed TransmitJob");
+		jobResult.setResultOutput("Completed ReceiveJob");
 
 		return jobResult;
 	}
 
-	// add resources/receiveJob.properties
-	//public ReceiveJobProcessor() {
-	//	super();
+	public ReceiveJobProcessor() {
+		super();
 		
-	//	Properties prop = new Properties();
-	//	InputStream input = null;
-	//	
-	//	try {			
-	//		String filename = "receiveJob.properties";
-	//		input = TransmitJobProcessor.class.getClassLoader().getResourceAsStream(filename);
-    //		if(input==null) {
-    //	            System.out.println("unable to find file:" + filename);
-    //		    return;
-    //		}
+		Properties prop = new Properties();
+		InputStream input = null;
+		
+		try {			
+			String filename = "receiveJob.properties";
+			input = ReceiveJobProcessor.class.getClassLoader().getResourceAsStream(filename);
+    		if(input==null) {
+    	            System.out.println("unable to find file:" + filename);
+    		    return;
+    		}
 			
 			// load a properties file
-	//		prop.load(input);
+			prop.load(input);
 			
-	//		this.BATCHSIZE=Integer.parseInt(prop.getProperty("zip.maxFileCount"));
-	//		this.landingZoneDir=prop.getProperty("zip.dir");
-	//		this.xccURL=prop.getProperty("ml.xcc.url");
+			this.landingZoneDir=prop.getProperty("landingzone.dir");
+			this.xccURL=prop.getProperty("ml.xcc.url");
+			this.collection=prop.getProperty("ml.collection");
+			this.BATCHSIZE=Integer.parseInt(prop.getProperty("max.batch.count"));
 			
-	//	} catch (IOException e) {
-	//		e.printStackTrace();
-	//	} finally {
-	//		if (input != null) {
-	//				try {
-	//					input.close();
-	//				} catch (IOException e) {
-	//					e.printStackTrace();
-	//				}
-	//		}
-	//	}
-	//}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (input != null) {
+					try {
+						input.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+			}
+		}
+	}
 
 	@Override
 	public ArrayBlockingQueue<String> retrieve(Map<String, Object> params) {
-		// get files from landingzone and add them to the queue
-		String fileList = getFilesToReceive();
-		String[] fileNames = fileList.split("\n");
-		for (int i = 0; i < fileList.length(); i++) {
+		File[] listOfFiles = getFilesToReceive();
+        Integer n = listOfFiles.length;
+		for (int i = 0; i < n; i++) {
 			try {
-				queue.put(fileNames[i]);
-				System.out.println(fileNames[i]);
+				String fileName = listOfFiles[i].toString();
+				queue.put(fileName);
+				System.out.println(listOfFiles[i]);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -179,16 +180,18 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 		return this.queue;
 }
 
-	private String getFilesToReceive() {
-		String listOfFiles = null;
+	private File[] getFilesToReceive() {  //return changed
+		File[] listOfFilesToProcess = null;
 		try {
-			String dir = new String("c:/Temp/landingzone/low2high/");
+			String dir = new String(landingZoneDir);
 			File folder = new File(dir);
-			listOfFiles = folder.toString();
+			File[] listOfFiles = folder.listFiles();
+			listOfFilesToProcess = listOfFiles;
 	} catch (Exception e) {
 		System.out.println("error");
 	}
-		return listOfFiles;
+		return listOfFilesToProcess;
     }	
 
 }
+
