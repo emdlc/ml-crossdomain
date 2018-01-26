@@ -31,3 +31,13 @@ dependencies {
     testCompile 'junit:junit:+'
     testCompile 'org.springframework.boot:spring-boot-starter-test:+'
 }
+
+def receiveTestProps = new Properties()
+file('src/test/properties/receiveJob.properties').each {receiveTestProps.load(it)}
+
+task stageTestData(type: Copy) {
+    from 'src/test/test-data'
+    into receiveTestProps.getProperty('landingzone.dir')
+}
+
+test.dependsOn stageTestData
