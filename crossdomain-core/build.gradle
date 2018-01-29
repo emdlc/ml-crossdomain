@@ -33,7 +33,7 @@ dependencies {
 }
 
 def receiveTestProps = new Properties()
-file('src/test/properties/receiveJob.properties').each {receiveTestProps.load(it)}
+file('src/test/resources/receiveJob.properties').withInputStream {receiveTestProps.load(it)}
 
 task stageTestData(type: Copy) {
     from 'src/test/test-data'
