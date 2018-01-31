@@ -24,9 +24,9 @@ public class ReceiveJobTest {
     @Test
     public void runReceiveOneJob() {
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
-        dbAssert.assertDocumentDoesNotExist("1234");
+        dbAssert.assertDocumentDoesNotExist("1235");
         JobResult result = mgr.runJob();
-        dbAssert.assertDocumentExists("1234");
+        dbAssert.assertDocumentExists("1235");
         System.out.println("result startDate=" + result.getStart());
         System.out.println("result=" + result.getResultOutput());
         System.out.println("result endDate=" + result.getEnd());
