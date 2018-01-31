@@ -1,0 +1,11 @@
+{
+  "database-name" : "crossdomain-test-replica",
+  "range-element-index" : [ {
+    "scalar-type" : "dateTime",
+    "namespace-uri" : "http://marklogic.com/mlcs/cds",
+    "localname" : "SystemTimeStamp",
+    "collation" : "http://marklogic.com/collation/",
+    "range-value-positions" : false,
+    "invalid-values" : "reject"
+  } ]
+}
