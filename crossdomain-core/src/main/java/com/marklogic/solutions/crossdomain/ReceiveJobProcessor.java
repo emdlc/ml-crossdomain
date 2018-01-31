@@ -165,3 +165,4 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 		FileUtils.deleteQuietly(incomingJarFile);
 	}
 }
+
