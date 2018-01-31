@@ -2,6 +2,8 @@ package com.marklogic.solutions.crossdomain;
 
 import org.junit.Test;
 
+import ch.qos.logback.classic.Logger;
+
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -12,6 +14,7 @@ public class SimpleJobTest {
 
         public NumberJobItem(int number) {
             this.number = number;
+            System.out.println("number is"+number);
         }
     }
 
