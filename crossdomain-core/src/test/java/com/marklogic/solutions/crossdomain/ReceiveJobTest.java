@@ -18,13 +18,14 @@ public class ReceiveJobTest {
     public void setupLandingZoneDirectoryAndClearReplicaDatabase() throws IOException {
         Properties testReceiveProps = ClasspathUtils.getPropertiesFileFromClasspath("/receiveJob.properties");
         lzUtils = new LandingZoneTestUtils(testReceiveProps.getProperty("landingzone.dir"));
-        lzUtils.stageTestDataToLandingZone("/test-data");
+        lzUtils.clearLandingZone();
         dbUtils = new DatabaseTestUtils(testReceiveProps.getProperty("ml.xcc.url"));
         dbUtils.clearDatabase();
     }
 
     @Test
-    public void runReceiveOneJob() {
+    public void runReceiveOneJob() throws IOException {
+        lzUtils.stageTestDataToLandingZone("/test-data/receive/working");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
         dbUtils.assertDocumentDoesNotExist("1235");
         JobResult result = mgr.runJob();

@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class LandingZoneTestUtils extends Assert {
 
@@ -24,8 +26,28 @@ public class LandingZoneTestUtils extends Assert {
         lzPath = Paths.get(lzPathStr);
     }
 
-    public boolean fileExists(String relativePath) {
-        return Files.exists(Paths.get(lzPath + "/" + relativePath));
+    public boolean fileExists(String lzRelativePath) {
+        return Files.exists(Paths.get(lzPath + "/" + lzRelativePath));
+    }
+
+    public void assertFileExists(String lzRelativePath) {
+        assertTrue(String.format("'%s' file does not exist in landingzone", lzRelativePath), fileExists(lzRelativePath));
+    }
+
+    public void assertJarFilesInLandingZone(int count) {
+        // TODO: Implement
+    }
+
+    public Collection<String> getJarFilesInLandingZone() {
+        ArrayList<String> jarFileNames = new ArrayList<String>();
+        // TODO: Implement
+        return jarFileNames;
+    }
+
+    public String extractFileContentsInJar(String relativeJarPath, String filePathInJar) {
+        String contents = null;
+        // TODO: Implement
+        return contents;
     }
 
     public void clearLandingZone() {

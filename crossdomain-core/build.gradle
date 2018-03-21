@@ -30,6 +30,7 @@ dependencies {
         
     testCompile 'junit:junit:+'
     testCompile 'org.springframework.boot:spring-boot-starter-test:+'
+    testCompile 'com.marklogic:mlcp:9.0.4'
 }
 
 def receiveTestProps = new Properties()

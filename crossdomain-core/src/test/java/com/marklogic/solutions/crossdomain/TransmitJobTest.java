@@ -19,14 +19,21 @@ public class TransmitJobTest {
     public void setup() throws IOException {
         Properties testTransmitProps = ClasspathUtils.getPropertiesFileFromClasspath("/transmitJob.properties");
         lzUtils = new LandingZoneTestUtils(testTransmitProps.getProperty("landingzone.dir"));
-        lzUtils.stageTestDataToLandingZone("/test-data");
         dbUtils = new DatabaseTestUtils(testTransmitProps.getProperty("ml.xcc.url"));
+        dbUtils.setMlcpHome(testTransmitProps.getProperty("mlcp.home"));
         lzUtils.clearLandingZone();
+        dbUtils.clearDatabase();
     }
 
     @Test
-    public void runReceiveOneJob() {
+    public void runTransmitOneJob() {
+        dbUtils.loadTestDataFromClasspath("/test-data/transmit/simpleTest");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new TransmitJobProcessor());
-        // TODO:
+
+        // TODO: Implement the following assertions
+//        lzUtils.assertFileExists("test.jar");
+        lzUtils.assertJarFilesInLandingZone(1);
+//        lzUtils.assertContentAndMetadataFileForUriInJar();
+        System.out.println("Dummy log");
     }
 }
