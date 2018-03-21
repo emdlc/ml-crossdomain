@@ -48,7 +48,6 @@
   "pre-commit-trigger-depth": 1000,
   "pre-commit-trigger-limit": 10000,
   "collation": "http://marklogic.com/collation/",
-  "coordinate-system": "wgs84",
   "ssl-allow-sslv3": true,
   "ssl-allow-tls": true,
   "ssl-disable-sslv3": false,
