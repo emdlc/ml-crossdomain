@@ -4,6 +4,7 @@ import com.marklogic.solutions.utils.ClasspathUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.springframework.util.FileSystemUtils;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.Collection;
 
 public class LandingZoneTestUtils extends Assert {
 
+	private static final Logger logger = Logger.getLogger(LandingZoneTestUtils.class);
     public File lzDir;
     public String lzPathStr;
     public Path lzPath;
@@ -29,10 +31,18 @@ public class LandingZoneTestUtils extends Assert {
     public boolean fileExists(String lzRelativePath) {
         return Files.exists(Paths.get(lzPath + "/" + lzRelativePath));
     }
+	
+	public boolean filePathExists(String filePath) {
+		return Files.exists(Paths.get(filePath));
+	}
 
     public void assertFileExists(String lzRelativePath) {
         assertTrue(String.format("'%s' file does not exist in landingzone", lzRelativePath), fileExists(lzRelativePath));
     }
+	
+	public void assertFilePathExists(String filePath) {
+        assertTrue(String.format("'%s' file does not exist in archive ", filePath), filePathExists(filePath));
+	}
 
     public void assertJarFilesInLandingZone(int count) {
         // TODO: Implement
