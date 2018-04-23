@@ -8,16 +8,20 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Properties;
+import org.apache.log4j.Logger;
+
 
 public class ReceiveJobTest {
 
+	private static final Logger logger = Logger.getLogger(ReceiveJobTest.class);
+	
     DatabaseTestUtils dbUtils;
     LandingZoneTestUtils lzUtils;
-
+		
     @Before
     public void setupLandingZoneDirectoryAndClearReplicaDatabase() throws IOException {
-        Properties testReceiveProps = ClasspathUtils.getPropertiesFileFromClasspath("/receiveJob.properties");
-        lzUtils = new LandingZoneTestUtils(testReceiveProps.getProperty("landingzone.dir"));
+		Properties testReceiveProps = ClasspathUtils.getPropertiesFileFromClasspath("/receiveJob.properties");
+		lzUtils = new LandingZoneTestUtils(testReceiveProps.getProperty("landingzone.dir"));
         lzUtils.clearLandingZone();
         dbUtils = new DatabaseTestUtils(testReceiveProps.getProperty("ml.xcc.url"));
         dbUtils.clearDatabase();
@@ -25,13 +29,15 @@ public class ReceiveJobTest {
 
     @Test
     public void runReceiveOneJob() throws IOException {
-        lzUtils.stageTestDataToLandingZone("/test-data/receive/working");
+        Properties testReceiveProps = ClasspathUtils.getPropertiesFileFromClasspath("/receiveJob.properties");
+		lzUtils.stageTestDataToLandingZone("/test-data/receive/working");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
         dbUtils.assertDocumentDoesNotExist("1235");
         JobResult result = mgr.runJob();
         dbUtils.assertDocumentExists("1235");
-        System.out.println("result startDate=" + result.getStart());
-        System.out.println("result=" + result.getResultOutput());
-        System.out.println("result endDate=" + result.getEnd());
+		lzUtils.assertFilePathExists(testReceiveProps.getProperty("landingzone.archive.dir") + "/cds-00001.jar");
+        logger.info("result startDate=" + result.getStart());
+        logger.info("result=" + result.getResultOutput());
+        logger.info("result endDate=" + result.getEnd());
     }
 }
