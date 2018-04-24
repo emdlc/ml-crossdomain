@@ -4,6 +4,7 @@ import com.marklogic.solutions.crossdomain.jobs.transmit.TransmitJobProcessor;
 import com.marklogic.solutions.crossdomain.testutils.DatabaseTestUtils;
 import com.marklogic.solutions.crossdomain.testutils.LandingZoneTestUtils;
 import com.marklogic.solutions.utils.ClasspathUtils;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,11 +30,14 @@ public class TransmitJobTest {
     public void runTransmitOneJob() {
         dbUtils.loadTestDataFromClasspath("/test-data/transmit/simpleTest");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new TransmitJobProcessor());
+        JobResult result = mgr.runJob();
+        System.out.println(result.getResultOutput());
 
-        // TODO: Implement the following assertions
-//        lzUtils.assertFileExists("test.jar");
-        lzUtils.assertJarFilesInLandingZone(1);
-//        lzUtils.assertContentAndMetadataFileForUriInJar();
-        System.out.println("Dummy log");
+        // 2 files expected. The envelope Jar and the status Jar
+        lzUtils.assertJarFilesInLandingZone(2);	
+        lzUtils.assertContentFileForUriInJar("12360");
+        
+        //TODO: Implement the following assertions
+//      lzUtils.assertContentAndMetadataFileForUriInJar();
     }
 }

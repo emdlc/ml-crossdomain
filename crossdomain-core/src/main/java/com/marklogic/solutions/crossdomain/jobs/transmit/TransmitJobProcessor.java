@@ -10,8 +10,9 @@ import com.marklogic.xcc.types.XName;
 import com.marklogic.xcc.types.XdmValue;
 import com.marklogic.xcc.types.XdmVariable;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 				try {
 					docContents = getDocumentFromDatabase(uri);
 					String datafilename = timeStamp + "-DB-data-" + batchId + "-" + uriCounter + ".xml";
-					out.putNextEntry(new ZipEntry(datafilename));
+					out.putNextEntry(new ZipEntry(uri));
 					byte[] inputBytes = docContents.getBytes();
 					out.write(inputBytes);
 				} catch (XccConfigException | RequestException | URISyntaxException | IOException e) {
@@ -132,7 +133,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 			prop.load(input);
 			
 			this.BATCHSIZE=Integer.parseInt(prop.getProperty("zip.maxFileCount"));
-			this.landingZoneDir=prop.getProperty("zip.dir");
+			this.landingZoneDir=prop.getProperty("landingzone.dir");
 			this.xccURL=prop.getProperty("ml.xcc.url");
 			
 		} catch (IOException e) {
@@ -202,26 +203,26 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 
 		ResultSequence rs = session.submitRequest(request);
 		mlResponse = rs.asString();
+		System.out.println("URIs: " + mlResponse);
 
 		return mlResponse;
 	}
 
-	@SuppressWarnings("deprecation")
-	private String getAllUrisQuery() {
+	private String getAllUrisQuery() {		
+		return getXqueryFromFile("/get-uris-for-transmit-job.xqy");
+	}
 
-		InputStream stream = ClasspathUtils.getClasspathContentAsStream("/get-uris-for-transmit-job.xqy");
+	private String getXqueryFromFile(String xqueryFileName) {
+		File file = ClasspathUtils.getFileOrDirectoryFromClasspath(xqueryFileName);
 
-		String ctsUrisQuery = "";
+		String mlQuery = "";
 		try {
-			ctsUrisQuery = IOUtils.toString(stream);
+			mlQuery = FileUtils.readFileToString(file, "UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		return ctsUrisQuery;
-
+		return mlQuery;
 	}
-
 
 
 	private void writeStatusDocumentToZip(String statusDocument, String zipFileName, String zipContentFileName) throws IOException {
@@ -247,14 +248,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		InputStream stream = ClasspathUtils.getClasspathContentAsStream("/build-status-document.xqy");
-
-		String mlQuery = null;
-		try {
-			mlQuery = IOUtils.toString(stream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		String mlQuery = getXqueryFromFile("/build-status-document.xqy");
 						
 		Request request = session.newAdhocQuery(mlQuery);
 		ResultSequence rs = session.submitRequest(request);
@@ -268,15 +262,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		InputStream stream = ClasspathUtils.getClasspathContentAsStream("/wrap-document.xqy");
-
-		String mlQuery = null;
-		try {
-			mlQuery = IOUtils.toString(stream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-						
+		String mlQuery = getXqueryFromFile("/wrap-document.xqy");
 		Request request = session.newAdhocQuery(mlQuery);
 		
 		Map<String, String> params = new HashMap<String, String>();
