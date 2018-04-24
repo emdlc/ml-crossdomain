@@ -1,14 +1,17 @@
 package com.marklogic.solutions.crossdomain;
 
+import com.marklogic.solutions.crossdomain.jobs.receive.ReceiveItem;
 import com.marklogic.xcc.*;
 import com.marklogic.xcc.exceptions.RequestException;
 import com.marklogic.xcc.exceptions.XccConfigException;
 import org.apache.commons.io.FileUtils;
+import org.jdom2.input.JDOMParseException;
 import org.jdom2.input.SAXBuilder;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
@@ -18,76 +21,48 @@ import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import org.jdom2.DocType;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.jdom2.output.*;
-//import org.assertj.core.util.Files;
+import org.apache.log4j.Logger;
+
 
 public class ReceiveJobProcessor extends JobProcessor<String> {
 	
 	private int BATCHSIZE;
 	private String landingZoneDir;
 	private String landingZoneArchiveDir;
+	private String landingZoneErrorDir;
 	private String xccURL;
 	private String collection;
+	private Namespace cds = Namespace.getNamespace("p","http://marklogic.com/mlcs/cds");
+	private Boolean jarErroredFlag = false; 
+	private String jarFileName = null;
+	private String jarFileFullPathString = null;
+	private static final Logger logger = Logger.getLogger(ReceiveJobProcessor.class);
 	
 	@Override
 	public JobResult executeJob() {
 		Date jobStartDate = new Date();
 		while (queue.size() > 0) {
 			for (int i = 0; (i < BATCHSIZE && queue.size() > 0); i++) {
+				String jarFileName;
 				try {
-					String zipFileName = queue.take();
-					System.out.println("Processing file: " + zipFileName);
-					File file = new File(zipFileName);
-					String jarFileFullPath = landingZoneDir + File.separator + file.getName();
-					ZipFile zipFile = new ZipFile(jarFileFullPath);
-					Enumeration<? extends ZipEntry> entries = zipFile.entries();
-					while (entries.hasMoreElements()) {
-						ZipEntry entry = (ZipEntry) entries.nextElement();
-						if (entry.getName().endsWith(".xml")) {
-							BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
-							//IOUtils.toString(bis, "UTF-8");
-							SAXBuilder builder = new SAXBuilder();
-							Document document = null;
-							document = builder.build(bis);
-							Namespace cds = Namespace.getNamespace("p","http://marklogic.com/mlcs/cds");
-							Element root = document.getRootElement();
-							String mluri = root.getChildText("UniqueIdentifier", cds);
-							String[] coll = new String[] {collection};
-							ContentCreateOptions createOptions = new ContentCreateOptions();
-							createOptions.setCollections((coll));
-							createOptions.setFormatXml();
-							DOMOutputter outputter = new DOMOutputter();
-							Content content = null;	
-							content = ContentFactory.newContent(mluri, outputter.output(document), createOptions);
-							URI uri = new URI(xccURL);
-							ContentSource source = null;
-							source = ContentSourceFactory.newContentSource(uri);
-							Session session = source.newSession();
-							session.insertContent(content);
-							bis.close();
-						}
-					}
-					zipFile.close();
-					archiveJarFile(file);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
+					jarFileName = queue.take();
+					processZip(jarFileName);
 				} catch (IOException e) {
 					e.printStackTrace();
-				} catch (JDOMException e) {
-					e.printStackTrace();
-				} catch (URISyntaxException e) {
-					e.printStackTrace();
-				} catch (XccConfigException e) {
-					e.printStackTrace();
-				} catch (RequestException e) {
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				} catch (XccConfigException | JDOMException | URISyntaxException e) {
 					e.printStackTrace();
 				}
-			}
-		}
+			}  
+		} 
 		JobResult jobResult = new JobResult();
 		jobResult.setStart(jobStartDate);
 		jobResult.setEnd(new Date());
@@ -104,7 +79,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 			String filename = "receiveJob.properties";
 			input = ReceiveJobProcessor.class.getClassLoader().getResourceAsStream(filename);
     		if(input==null) {
-    			System.out.println("unable to find file:" + filename);
+    			logger.error("unable to find file:" + filename);
     			return;
     		}
 			
@@ -113,6 +88,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 			
 			this.landingZoneDir=prop.getProperty("landingzone.dir");
 			this.landingZoneArchiveDir=prop.getProperty("landingzone.archive.dir");
+			this.landingZoneErrorDir=prop.getProperty("landingzone.error.dir");
 			this.xccURL=prop.getProperty("ml.xcc.url");
 			this.collection=prop.getProperty("ml.collection");
 			this.BATCHSIZE=Integer.parseInt(prop.getProperty("max.batch.count"));
@@ -133,36 +109,154 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 	@Override
 	public ArrayBlockingQueue<String> retrieve(Map<String, Object> params) {
 		File[] listOfFiles = getFilesToReceive();
-		Integer n = listOfFiles.length;
-		for (int i = 0; i < n; i++) {
-			try {
-				String fileName = listOfFiles[i].toString();
-				queue.put(fileName);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		if (listOfFiles != null) {
+  		    Integer n = listOfFiles.length;
+		    for (int i = 0; i < n; i++) {
+			    try {
+			    	String fileName = listOfFiles[i].toString();
+			    	queue.put(fileName);
+			    } catch (InterruptedException e) {
+			    	e.printStackTrace();
+			    }
+		    }
+		}
+		else { 
+			logger.info("No files to process on landingzone");
 		}
 		return this.queue;
-}
+	}
+
+	private void processZip(String jarFileFullPath) throws IOException, XccConfigException, JDOMException, URISyntaxException {
+		jarErroredFlag = false;
+		File file = new File(jarFileFullPath);	
+		jarFileName = file.getName();
+		jarFileFullPathString = jarFileFullPath;
+		try {
+			logger.info(jarFileName + " starting processing for " + jarFileFullPath);
+			ZipFile zipFile = new ZipFile(jarFileFullPath);
+			processFiles(zipFile);
+			zipFile.close();
+			if (jarErroredFlag == false) {
+				moveFile(file, "archive");
+				logger.info(jarFileName + " processing successful");
+			}
+			else {
+				logger.info(jarFileName + " processing of contents failed - one or more files in jar failed to ingest");
+				moveFile(file, "error");
+			}
+		} catch (Exception e) {
+			logger.error(jarFileName + " failed processing - cannot be opened as a jar file " + jarFileFullPath);
+			logger.error(e);
+			moveFile(file,"error");
+		}
+	}
+
+	private void processFiles(ZipFile zipFile) throws XccConfigException, IOException, JDOMException, URISyntaxException {
+		Enumeration<? extends ZipEntry> entries = zipFile.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry entry = (ZipEntry) entries.nextElement();
+			String entryName = entry.getName();
+			if (entry.getName().endsWith(".xml")) {
+				xmlValidateAndIngest(zipFile, entry);
+			}
+			else {
+				logger.error(jarFileName + " " + entryName + " ingest failed - not an .xml");
+				jarErroredFlag = true;
+			}
+			
+		}
+	}
+
+	private void xmlValidateAndIngest(ZipFile zipFile, ZipEntry entry) throws IOException, JDOMException, XccConfigException, URISyntaxException {
+			BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+			SAXBuilder builder = new SAXBuilder();
+			Document document = null;
+			try {
+				//fails here with not XML format 
+				document = builder.build(bis);
+				Element root = document.getRootElement();
+				//but status documents will be received as well -- need to add that
+				if ((root.getNamespacePrefix() == "cds") & 
+					(root.getName() == "DataEnvelope") & 
+					(root.getChildText("UniqueIdentifier", cds) != null)) 
+						xmlIngest(entry, document, root);	
+				else { 
+					logger.error(jarFileName + " " + entry + " ingest failed - contains invalid XML schema");
+					jarErroredFlag = true;
+				}
+				bis.close();
+			} catch (Exception e) {
+				logger.error(jarFileName + " " + entry + " ingest failed - contents not valid XML ");
+				logger.error(e);
+				jarErroredFlag = true;
+		}
+	}
+
+	private void xmlIngest(ZipEntry entry, Document document, Element root) throws JDOMException, XccConfigException, URISyntaxException {
+		String[] coll = new String[] {collection};
+		ContentCreateOptions createOptions = new ContentCreateOptions();
+		createOptions.setCollections((coll));
+		createOptions.setFormatXml();
+		DOMOutputter outputter = new DOMOutputter();
+		Content content = null;	
+		content = ContentFactory.newContent(root.getChildText("UniqueIdentifier", cds), outputter.output(document), createOptions);
+		URI uri = new URI(xccURL);
+		ContentSource source = null;
+		source = ContentSourceFactory.newContentSource(uri);
+		Session session = source.newSession();
+		try {
+			session.insertContent(content);
+			logger.info(jarFileName + " " + entry + " ingest successful into database");
+		}
+		catch (Exception e) {
+			logger.error(jarFileName + " " + entry + " ingest failed into database ");
+			logger.error(e);
+			jarErroredFlag = true;
+		}
+	}
 
 	private File[] getFilesToReceive() {  
 		File[] listOfFilesToProcess = null;
 		try {
 			String dir = new String(landingZoneDir);
 			File folder = new File(dir);
-			File[] listOfFiles = folder.listFiles();
-			listOfFilesToProcess = listOfFiles;
-	} catch (Exception e) {
-		System.out.println("error");
+			if (verifyLandingZoneAccessible()) {
+				File[] listOfFiles = folder.listFiles();
+				listOfFilesToProcess = listOfFiles;
+				if (listOfFilesToProcess.length == 0) {
+					logger.info(landingZoneDir + " no files found to process");
+				} else {}
+			}
+		} catch (Exception e) {
+			logger.error(landingZoneDir + " problem reading landingzone");
 	}
 		return listOfFilesToProcess;
     }	
 
-	private void archiveJarFile(File incomingJarFile) throws IOException {
-		String fileName = incomingJarFile.getName();
-		File archivedJarFile = new File(landingZoneArchiveDir, fileName);
-		FileUtils.copyFile(incomingJarFile,  archivedJarFile);
-		FileUtils.deleteQuietly(incomingJarFile);
+	private boolean verifyLandingZoneAccessible() {
+	    String dir = new String(landingZoneDir);
+	    File folder = new File(dir);
+    	Boolean dirExists = folder.exists();
+	    Boolean isDir = folder.isDirectory();
+	    if (dirExists == true & isDir == true) {
+	    	return true;
+	    }
+	    else {
+    		logger.error(dir + " landingzone directory does not exist");
+    		return false;
+	   }
+	}
+	
+	private void moveFile(File file, String location) throws IOException {
+		String name = file.getName(); 
+		File moveToFile = null;
+		if (location == "archive") {
+			moveToFile = new File(landingZoneArchiveDir, name);
+		} else {
+			moveToFile = new File(landingZoneErrorDir, name);
+		}
+		FileUtils.copyFile(file, moveToFile);
+		FileUtils.deleteQuietly(file);
+		logger.info(name + " moved to " + location + " dir " + moveToFile);
 	}
 }
-

@@ -11,9 +11,9 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 
 
-public class ReceiveJobTest {
+public class ReceiveJobBadFileTest {
 
-	private static final Logger logger = Logger.getLogger(ReceiveJobTest.class);
+	private static final Logger logger = Logger.getLogger(ReceiveJobBadFileTest.class);
 	
     DatabaseTestUtils dbUtils;
     LandingZoneTestUtils lzUtils;
@@ -28,14 +28,13 @@ public class ReceiveJobTest {
     }
 
     @Test
-    public void runReceiveOneJob() throws IOException {
+    public void runReceiveOneJobBadFile() throws IOException {
         Properties testReceiveProps = ClasspathUtils.getPropertiesFileFromClasspath("/receiveJob.properties");
-		lzUtils.stageTestDataToLandingZone("/test-data/receive/working");
+		lzUtils.stageTestDataToLandingZone("/test-data/receive/badFile");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
-        dbUtils.assertDocumentDoesNotExist("1235");
         JobResult result = mgr.runJob();
-        dbUtils.assertDocumentExists("1235");
-		lzUtils.assertFilePathExists(testReceiveProps.getProperty("landingzone.archive.dir") + "/cds-00001.jar");
+		dbUtils.assertDocumentDoesNotExist("1241");
+		lzUtils.assertFilePathExists(testReceiveProps.getProperty("landingzone.error.dir") + "/cds-00003.jar");
         logger.info("result startDate=" + result.getStart());
         logger.info("result=" + result.getResultOutput());
         logger.info("result endDate=" + result.getEnd());
