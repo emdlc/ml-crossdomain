@@ -3,5 +3,5 @@ This query should be updated to pull documents based on some sort of Date Range 
 documents to be transmitted
 :)
 
-let $uris := cts:uris( (), ('limit=200'), () )
+let $uris := cts:uris( (), ('limit=250'), () )
 return $uris

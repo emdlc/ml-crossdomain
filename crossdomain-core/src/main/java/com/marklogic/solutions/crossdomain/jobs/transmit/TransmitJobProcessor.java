@@ -184,13 +184,11 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		String mlResponse = null;
 		ContentSource cs;
 
-		String queryString = getAllUrisQuery();
-
 		cs = ContentSourceFactory.newContentSource(new URI(xccURL));
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		Request request = session.newAdhocQuery(queryString);
+		Request request = session.newModuleInvoke("/get-uris-for-transmit-job.xqy");
 
 		for (Entry<String, String> entry : args.entrySet()) {
 			String mapKey = entry.getKey();
@@ -207,23 +205,6 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 
 		return mlResponse;
 	}
-
-	private String getAllUrisQuery() {		
-		return getXqueryFromFile("/get-uris-for-transmit-job.xqy");
-	}
-
-	private String getXqueryFromFile(String xqueryFileName) {
-		File file = ClasspathUtils.getFileOrDirectoryFromClasspath(xqueryFileName);
-
-		String mlQuery = "";
-		try {
-			mlQuery = FileUtils.readFileToString(file, "UTF-8");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return mlQuery;
-	}
-
 
 	private void writeStatusDocumentToZip(String statusDocument, String zipFileName, String zipContentFileName) throws IOException {
 		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
@@ -247,10 +228,8 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs = ContentSourceFactory.newContentSource(new URI(xccURL));
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
-
-		String mlQuery = getXqueryFromFile("/build-status-document.xqy");
 						
-		Request request = session.newAdhocQuery(mlQuery);
+		Request request = session.newModuleInvoke("/build-status-document.xqy");
 		ResultSequence rs = session.submitRequest(request);
 		return rs.asString();
 	}
@@ -262,8 +241,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		String mlQuery = getXqueryFromFile("/wrap-document.xqy");
-		Request request = session.newAdhocQuery(mlQuery);
+		Request request = session.newModuleInvoke("/wrap-document.xqy");
 		
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("URI", uri);

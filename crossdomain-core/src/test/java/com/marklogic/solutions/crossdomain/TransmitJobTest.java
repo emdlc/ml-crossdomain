@@ -37,6 +37,9 @@ public class TransmitJobTest {
         lzUtils.assertJarFilesInLandingZone(2);	
         lzUtils.assertContentFileForUriInJar("12360");
         
+        // TODO: implement
+        //lzUtils.assertJarIsSigned();
+        
         //TODO: Implement the following assertions
 //      lzUtils.assertContentAndMetadataFileForUriInJar();
     }
