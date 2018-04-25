@@ -1,9 +1,10 @@
 {
   "database-name" : "%%DATABASE%%",
+  "maintain-last-modified": "true",
   "range-element-index" : [ {
     "scalar-type" : "dateTime",
-    "namespace-uri" : "http://marklogic.com/mlcs/cds",
-    "localname" : "SystemTimeStamp",
+    "namespace-uri": "http://marklogic.com/xdmp/property",
+    "localname": "last-modified",
     "collation" : "http://marklogic.com/collation/",
     "range-value-positions" : false,
     "invalid-values" : "reject"
