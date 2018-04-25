@@ -54,11 +54,10 @@ public class DatabaseTestUtils extends Assert {
             }
             return response;
         } catch (RequestException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return "";
     }
 
     public void clearDatabase() {
