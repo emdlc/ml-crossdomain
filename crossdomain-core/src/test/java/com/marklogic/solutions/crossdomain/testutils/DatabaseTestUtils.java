@@ -64,12 +64,16 @@ public class DatabaseTestUtils extends Assert {
         executeXquery("xdmp:database-forests(xdmp:database()) ! xdmp:forest-clear(.)");
     }
 
+    public void assertDocumentExistsInCollection(String uri, String collection) {
+        assertTrue(String.format("URI = '%s' cannot be found in '%s' collection", uri, collection), "true".equals(executeXquery(String.format("xs:boolean(xdmp:document-get-collections('%s') = '%s')", uri, collection))));
+    }
+
     public void assertDocumentExists(String uri) {
-        assertTrue("true".equals(executeXquery(String.format("xdmp:exists(fn:doc('%s'))", uri))));
+        assertTrue(String.format("URI = '%s' cannot be found", uri), "true".equals(executeXquery(String.format("xdmp:exists(fn:doc('%s'))", uri))));
     }
 
     public void assertDocumentDoesNotExist(String uri) {
-        assertFalse("true".equals(executeXquery(String.format("xdmp:exists(fn:doc('%s'))", uri))));
+        assertFalse(String.format("URI = '%s' should not be found", uri), "true".equals(executeXquery(String.format("xdmp:exists(fn:doc('%s'))", uri))));
     }
 
     public void loadTestDataFromClasspath(String classpathPath) {
