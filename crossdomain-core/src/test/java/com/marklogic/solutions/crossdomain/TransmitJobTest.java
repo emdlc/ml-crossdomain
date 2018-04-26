@@ -4,7 +4,6 @@ import com.marklogic.solutions.crossdomain.jobs.transmit.TransmitJobProcessor;
 import com.marklogic.solutions.crossdomain.testutils.DatabaseTestUtils;
 import com.marklogic.solutions.crossdomain.testutils.LandingZoneTestUtils;
 import com.marklogic.solutions.utils.ClasspathUtils;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,5 +41,18 @@ public class TransmitJobTest {
         
         //TODO: Implement the following assertions
 //      lzUtils.assertContentAndMetadataFileForUriInJar();
+    }
+
+    @Test
+    public void runTransmitOfFiftyDocuments() {
+        dbUtils.runResourceScript("transmit/generate-n-docs.xqy", "50");
+        TransmitJobProcessor jobProcessor = new TransmitJobProcessor();
+        SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(jobProcessor);
+        JobResult result = mgr.runJob();
+        System.out.println(result.getResultOutput());
+
+        // 2 files expected. The envelope Jar and the status Jar
+        lzUtils.assertJarFilesInLandingZone(10);
+
     }
 }

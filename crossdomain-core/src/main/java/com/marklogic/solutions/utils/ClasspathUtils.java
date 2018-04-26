@@ -1,5 +1,7 @@
 package com.marklogic.solutions.utils;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +11,10 @@ public class ClasspathUtils {
 
     public static InputStream getClasspathContentAsStream(String path) {
         return ClasspathUtils.class.getResourceAsStream(path);
+    }
+
+    public static String getResourceContentsAsString(String path) throws IOException {
+        return IOUtils.toString(getClasspathContentAsStream(path), "UTF-8");
     }
 
     public static File getFileOrDirectoryFromClasspath(String path) {
