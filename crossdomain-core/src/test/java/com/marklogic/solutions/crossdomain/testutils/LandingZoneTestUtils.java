@@ -123,4 +123,11 @@ public class LandingZoneTestUtils extends Assert {
         FileUtils.copyDirectory(testDataDir, lzDir);
     }
 
+	public void assertJarIsSigned() {
+		boolean isJarSigned = false;
+		
+		
+		assertTrue("Jar is not signed", isJarSigned);
+	}
+
 }

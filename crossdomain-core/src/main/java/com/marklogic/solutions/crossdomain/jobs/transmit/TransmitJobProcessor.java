@@ -43,19 +43,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 
 		ZipOutputStream out = null;
 		String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
-		int batchId = 0;
-		
-		if(queue.size() > 0) {
-			String statusDocument;
-			try {
-				statusDocument = getStatusDocument();
-				String jarFileName = landingZoneDir + timeStamp + "-DB-SYNC-status.jar";
-				String jarContentFileName = timeStamp + "-DB-data-status.xml";
-				writeStatusDocumentToZip(statusDocument, jarFileName, jarContentFileName);
-			} catch (XccConfigException | RequestException | URISyntaxException | IOException e) {
-				e.printStackTrace();
-			}
-		}
+		int batchId = 0;		
 
 		while (queue.size() > 0) {
 			// get BATCHSIZE uris from queue
@@ -88,10 +76,18 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 				uriCounter++;
 				try {
 					docContents = getDocumentFromDatabase(uri);
-					String datafilename = timeStamp + "-DB-data-" + batchId + "-" + uriCounter + ".xml";
 					out.putNextEntry(new ZipEntry(uri));
 					byte[] inputBytes = docContents.getBytes();
 					out.write(inputBytes);
+					
+					if(uriCounter == uris.size()) {
+						// just added the last content document to the zip; now add the status document
+						String statusDocument = getStatusDocument();
+						String jarContentFileName = timeStamp + "-DB-data-status.xml";
+						out.putNextEntry(new ZipEntry(jarContentFileName));
+						inputBytes = statusDocument.getBytes();
+						out.write(inputBytes);						
+					}
 				} catch (XccConfigException | RequestException | URISyntaxException | IOException e) {
 					e.printStackTrace();
 				}
@@ -184,13 +180,11 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		String mlResponse = null;
 		ContentSource cs;
 
-		String queryString = getAllUrisQuery();
-
 		cs = ContentSourceFactory.newContentSource(new URI(xccURL));
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		Request request = session.newAdhocQuery(queryString);
+		Request request = session.newModuleInvoke("/get-uris-for-transmit-job.xqy");
 
 		for (Entry<String, String> entry : args.entrySet()) {
 			String mapKey = entry.getKey();
@@ -207,23 +201,6 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 
 		return mlResponse;
 	}
-
-	private String getAllUrisQuery() {		
-		return getXqueryFromFile("/get-uris-for-transmit-job.xqy");
-	}
-
-	private String getXqueryFromFile(String xqueryFileName) {
-		File file = ClasspathUtils.getFileOrDirectoryFromClasspath(xqueryFileName);
-
-		String mlQuery = "";
-		try {
-			mlQuery = FileUtils.readFileToString(file, "UTF-8");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return mlQuery;
-	}
-
 
 	private void writeStatusDocumentToZip(String statusDocument, String zipFileName, String zipContentFileName) throws IOException {
 		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
@@ -247,10 +224,8 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs = ContentSourceFactory.newContentSource(new URI(xccURL));
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
-
-		String mlQuery = getXqueryFromFile("/build-status-document.xqy");
 						
-		Request request = session.newAdhocQuery(mlQuery);
+		Request request = session.newModuleInvoke("/build-status-document.xqy");
 		ResultSequence rs = session.submitRequest(request);
 		return rs.asString();
 	}
@@ -262,8 +237,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		cs.setAuthenticationPreemptive(true);
 		Session session = cs.newSession();
 
-		String mlQuery = getXqueryFromFile("/wrap-document.xqy");
-		Request request = session.newAdhocQuery(mlQuery);
+		Request request = session.newModuleInvoke("/wrap-document.xqy");
 		
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("URI", uri);

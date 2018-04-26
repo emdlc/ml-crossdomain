@@ -32,9 +32,12 @@ public class TransmitJobTest {
         JobResult result = mgr.runJob();
         System.out.println(result.getResultOutput());
 
-        // 2 files expected. The envelope Jar and the status Jar
-        lzUtils.assertJarFilesInLandingZone(2);	
+        // 1 JAR file expected. It contains the content documents wrapped in cds:Envelope and the status XML doc
+        lzUtils.assertJarFilesInLandingZone(1);	
         lzUtils.assertContentFileForUriInJar("12360");
+        
+        // TODO: implement
+        //lzUtils.assertJarIsSigned();
         
         //TODO: Implement the following assertions
 //      lzUtils.assertContentAndMetadataFileForUriInJar();
