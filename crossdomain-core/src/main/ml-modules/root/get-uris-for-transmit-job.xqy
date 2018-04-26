@@ -14,8 +14,13 @@ let $lastTransmitRuntime :=
     
 let $last-mod-query := cts:element-range-query(xs:QName("prop:last-modified"), ">=", $lastTransmitRuntime)
 let $uris := cts:uris( (), ("properties"), $last-mod-query)
+let $timestamp-ordered-uris :=
+    for $uri in $uris
+    let $lastModDate := cts:element-values(xs:QName("prop:last-modified"), (), ("properties"), cts:document-query($uri))
+    order by $lastModDate
+    return $uri
 
 let $doc := element lastTransmitRuntime { fn:current-dateTime() }
 let $_ := xdmp:document-insert($RUNTIME-URI, $doc)
 
-return $uris
+return $timestamp-ordered-uris
