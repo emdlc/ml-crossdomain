@@ -53,6 +53,7 @@ public class TransmitJobTest {
 
         // 2 files expected. The envelope Jar and the status Jar
         lzUtils.assertJarFilesInLandingZone(10);
+        lzUtils.assertFileComeInOrder();
 
     }
 }
