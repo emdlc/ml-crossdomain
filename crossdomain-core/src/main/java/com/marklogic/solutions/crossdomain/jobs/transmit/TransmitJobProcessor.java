@@ -63,7 +63,7 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 			
 			try {
 				if (uris.size() > 0) {
-					jarFileName = landingZoneDir + timeStamp + "-DB-SYNC-" + batchId + ".jar";
+					jarFileName = landingZoneDir + timeStamp + "-DB-SYNC-" + String.format("%04d", batchId) + ".jar";
 					out = new ZipOutputStream(new FileOutputStream(jarFileName));
 				}
 			} catch (FileNotFoundException e1) {
