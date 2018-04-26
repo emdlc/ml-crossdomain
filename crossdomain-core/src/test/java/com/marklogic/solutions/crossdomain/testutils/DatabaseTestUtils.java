@@ -100,6 +100,15 @@ public class DatabaseTestUtils extends Assert {
         }
     }
 
+    public void runResourceScript(String resourceUrl, String... params) {
+        try {
+            String xquery = String.format(ClasspathUtils.getResourceContentsAsString("/test-data-scripts/" + resourceUrl), params);
+            executeXquery(xquery);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public String getMlcpHome() {
         return mlcpHome;
     }
