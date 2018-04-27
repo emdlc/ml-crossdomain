@@ -17,6 +17,7 @@ let $uris := cts:uris( (), ("properties"), $last-mod-query)
 let $timestamp-ordered-uris :=
     for $uri in $uris
     let $lastModDate := cts:element-values(xs:QName("prop:last-modified"), (), ("properties"), cts:document-query($uri))
+    where $uri != $RUNTIME-URI
     order by $lastModDate
     return $uri
 
