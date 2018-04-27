@@ -45,7 +45,7 @@ public class TransmitJobTest {
 
     @Test
     public void runTransmitOfFiftyDocuments() {
-        dbUtils.runResourceScript("transmit/generate-n-docs.xqy", "50");
+        dbUtils.runDocInsertScript("transmit/generate-1-doc.xqy", 50);
         TransmitJobProcessor jobProcessor = new TransmitJobProcessor();
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(jobProcessor);
         JobResult result = mgr.runJob();

@@ -6,6 +6,7 @@ import com.marklogic.solutions.utils.ClasspathUtils;
 import com.marklogic.xcc.*;
 import com.marklogic.xcc.exceptions.RequestException;
 import com.marklogic.xcc.exceptions.XccConfigException;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 
@@ -111,6 +112,27 @@ public class DatabaseTestUtils extends Assert {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    /**
+     * Use this function instead of runResourceScript with /generate-n-docs.xqy
+     * when you want to ensure loop thru a process of adding each document.
+     *
+     * @param resourceUrl the XQY module to call
+     * @param count	Number of documents to add
+     */
+    public void runDocInsertScript(String resourceUrl, int count) {
+        try {
+        	for(int i=1; i<=count; i++) {
+        		String uri = i+"";
+        		String xquery = String.format(ClasspathUtils.getResourceContentsAsString("/test-data-scripts/" + resourceUrl), uri);
+        		executeXquery(xquery);
+				Thread.sleep(1000);  // wait a second between each insert
+        	}
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+			e.printStackTrace();
+		}
     }
 
     public String getMlcpHome() {
