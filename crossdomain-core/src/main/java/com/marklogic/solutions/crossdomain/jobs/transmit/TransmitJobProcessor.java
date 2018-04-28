@@ -10,13 +10,12 @@ import com.marklogic.xcc.types.XName;
 import com.marklogic.xcc.types.XdmValue;
 import com.marklogic.xcc.types.XdmVariable;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -35,6 +34,10 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 	private int BATCHSIZE;
 	private String landingZoneDir;
 	private String xccURL;
+	private boolean signJar;
+	private String keystoreFilePath;
+	private String keystoreAlias;
+	private String keystorePassword;
 	
 	@Override
 	public JobResult executeJob() {
@@ -101,7 +104,20 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
+			
+			// sign the jar - 
+			// sign the jar (this can be disabled by setting the signJar property to 'false')
+			if(signJar) {
+				try {
+					signJar(jarFileName);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
 		JobResult jobResult = new JobResult();
 		jobResult.setStart(jobStartDate);
@@ -109,6 +125,23 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		jobResult.setResultOutput("Completed TransmitJob");
 
 		return jobResult;
+	}
+
+	private void signJar(String jarFileName) throws IOException, InterruptedException {
+		File keystoreFile = ClasspathUtils.getFileOrDirectoryFromClasspath(this.keystoreFilePath);
+		String keystoreFileDir = keystoreFile.getAbsolutePath();
+		String [] commands = {"jarsigner", 
+								"-verbose",
+								"-keystore",  keystoreFileDir, 
+								"-storepass", keystorePassword,
+								//"-signedjar",  "Signed-"+jarFileName,  // this flag allows signed JAR to have another filename
+								jarFileName, keystoreAlias};
+
+		ProcessBuilder processBuilder = new ProcessBuilder(commands);
+		Process p = processBuilder.redirectError(Redirect.INHERIT).redirectOutput(Redirect.INHERIT).start();
+		p.waitFor();
+		int exitCode = p.exitValue();
+		//System.out.println("jarsigner exit code="+exitCode);
 	}
 
 	public TransmitJobProcessor() {
@@ -131,6 +164,11 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 			this.BATCHSIZE=Integer.parseInt(prop.getProperty("zip.maxFileCount"));
 			this.landingZoneDir=prop.getProperty("landingzone.dir");
 			this.xccURL=prop.getProperty("ml.xcc.url");
+			this.signJar=Boolean.parseBoolean(prop.getProperty("signJar"));
+			
+			this.keystoreFilePath=prop.getProperty("keystore.filepath");
+			this.keystorePassword=prop.getProperty("keystore.password");
+			this.keystoreAlias=prop.getProperty("keystore.alias");
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -200,23 +238,6 @@ public class TransmitJobProcessor extends JobProcessor<String> {
 		System.out.println("URIs: " + mlResponse);
 
 		return mlResponse;
-	}
-
-	private void writeStatusDocumentToZip(String statusDocument, String zipFileName, String zipContentFileName) throws IOException {
-		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-		
-		out.putNextEntry(new ZipEntry(zipContentFileName));
-		byte[] inputBytes = statusDocument.getBytes();
-		out.write(inputBytes);
-		
-		// close output write
-		try {
-			if (out != null) {
-				out.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	private String getStatusDocument() throws XccConfigException, URISyntaxException, RequestException {

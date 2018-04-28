@@ -4,6 +4,7 @@ import com.marklogic.solutions.crossdomain.jobs.transmit.TransmitJobProcessor;
 import com.marklogic.solutions.crossdomain.testutils.DatabaseTestUtils;
 import com.marklogic.solutions.crossdomain.testutils.LandingZoneTestUtils;
 import com.marklogic.solutions.utils.ClasspathUtils;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,6 +15,7 @@ public class TransmitJobTest {
 
     DatabaseTestUtils dbUtils;
     LandingZoneTestUtils lzUtils;
+    boolean signJar;
 
     @Before
     public void setup() throws IOException {
@@ -21,6 +23,7 @@ public class TransmitJobTest {
         lzUtils = new LandingZoneTestUtils(testTransmitProps.getProperty("landingzone.dir"));
         dbUtils = new DatabaseTestUtils(testTransmitProps.getProperty("ml.xcc.url"));
         dbUtils.setMlcpHome(testTransmitProps.getProperty("mlcp.home"));
+        this.signJar = Boolean.parseBoolean(testTransmitProps.getProperty("signJar"));
         lzUtils.clearLandingZone();
         dbUtils.clearDatabase();
     }
@@ -36,8 +39,10 @@ public class TransmitJobTest {
         lzUtils.assertJarFilesInLandingZone(1);	
         lzUtils.assertContentFileForUriInJar("12360");
         
-        // TODO: implement
-        //lzUtils.assertJarIsSigned();
+        if(signJar) {
+        	// jar signing is can be toggled on/off based on a property
+        	lzUtils.assertJarIsSigned();
+        }
         
         //TODO: Implement the following assertions
 //      lzUtils.assertContentAndMetadataFileForUriInJar();
