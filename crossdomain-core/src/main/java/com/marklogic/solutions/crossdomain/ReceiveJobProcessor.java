@@ -21,6 +21,9 @@ import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Collections;
 
 import org.jdom2.DocType;
 import org.jdom2.Document;
@@ -29,6 +32,13 @@ import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.jdom2.output.*;
 import org.apache.log4j.Logger;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 
 public class ReceiveJobProcessor extends JobProcessor<String> {
@@ -56,7 +66,8 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 					processZip(jarFileName);
 				} catch (IOException e) {
 					e.printStackTrace();
-				} catch (InterruptedException e1) {
+				} 
+				  catch (InterruptedException e1) {
 					e1.printStackTrace();
 				} catch (XccConfigException | JDOMException | URISyntaxException e) {
 					e.printStackTrace();
@@ -121,7 +132,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 		    }
 		}
 		else { 
-			logger.info("No files to process on landingzone");
+			logger.info("No files to process on landingzone " + landingZoneDir);
 		}
 		return this.queue;
 	}
@@ -175,11 +186,11 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 				//fails here with not XML format 
 				document = builder.build(bis);
 				Element root = document.getRootElement();
-				//but status documents will be received as well -- need to add that
-				if ((root.getNamespacePrefix() == "cds") & 
-					(root.getName() == "DataEnvelope") & 
-					(root.getChildText("UniqueIdentifier", cds) != null)) 
-						xmlIngest(entry, document, root);	
+				if (root.getNamespacePrefix() == "cds" & 
+					 ((root.getName() == "DataEnvelope" & root.getChildText("UniqueIdentifier", cds) != null) ||
+					   root.getName() == "StatusEnvelope")) {
+						xmlIngest(entry, document, root);							   
+					   }				
 				else { 
 					logger.error(jarFileName + " " + entry + " ingest failed - contains invalid XML schema");
 					jarErroredFlag = true;
@@ -192,14 +203,28 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 		}
 	}
 
-	private void xmlIngest(ZipEntry entry, Document document, Element root) throws JDOMException, XccConfigException, URISyntaxException {
+	private void xmlIngest(ZipEntry entry, Document document, Element root) throws JDOMException, XccConfigException, URISyntaxException, XPathExpressionException {
 		String[] coll = new String[] {collection};
 		ContentCreateOptions createOptions = new ContentCreateOptions();
-		createOptions.setCollections((coll));
 		createOptions.setFormatXml();
 		DOMOutputter outputter = new DOMOutputter();
 		Content content = null;	
-		content = ContentFactory.newContent(root.getChildText("UniqueIdentifier", cds), outputter.output(document), createOptions);
+
+		if (root.getName() == "DataEnvelope") {		
+			//assumes src:Data contains the node to insert 
+			String d = "Data";
+			Element cdsDataElement = root.getChild(d, cds);
+			List allChildren = cdsDataElement.getChildren();
+			String firstChildName = ((Element)allChildren.get(0)).getName();
+			Namespace firstChildNamespace = ((Element)allChildren.get(0)).getNamespace();;
+			Element replicatedDoc = cdsDataElement.getChild(firstChildName, firstChildNamespace);
+			String[] collection = new String[] {root.getChildText("DomainCollection", cds)};
+			createOptions.setCollections((collection));
+			content = ContentFactory.newContent(root.getChildText("UniqueIdentifier", cds), outputter.output(replicatedDoc), createOptions);
+		} else {
+			//assumes only storing most recent status document
+			content = ContentFactory.newContent("cds-replication-status", outputter.output(document), createOptions);
+		}
 		URI uri = new URI(xccURL);
 		ContentSource source = null;
 		source = ContentSourceFactory.newContentSource(uri);
@@ -223,6 +248,7 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 			if (verifyLandingZoneAccessible()) {
 				File[] listOfFiles = folder.listFiles();
 				listOfFilesToProcess = listOfFiles;
+				Arrays.sort(listOfFiles);
 				if (listOfFilesToProcess.length == 0) {
 					logger.info(landingZoneDir + " no files found to process");
 				} else {}
