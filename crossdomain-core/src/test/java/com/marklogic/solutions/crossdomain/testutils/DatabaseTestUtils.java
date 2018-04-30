@@ -6,8 +6,8 @@ import com.marklogic.solutions.utils.ClasspathUtils;
 import com.marklogic.xcc.*;
 import com.marklogic.xcc.exceptions.RequestException;
 import com.marklogic.xcc.exceptions.XccConfigException;
-
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 
 import java.io.File;
@@ -141,5 +141,10 @@ public class DatabaseTestUtils extends Assert {
 
     public void setMlcpHome(String mlcpHome) {
         this.mlcpHome = mlcpHome;
+    }
+
+
+    public void assertElementExistsInDocument(String uri, String xpath) {
+        assertTrue(String.format("XPath '%s' not found in document with URI = '%s'", xpath, uri), !StringUtils.isBlank(executeXquery(String.format("fn:doc('%s')/%s", uri, xpath))));
     }
 }

@@ -1,30 +1,24 @@
 package com.marklogic.solutions.crossdomain.testutils;
 
 import com.marklogic.solutions.utils.ClasspathUtils;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.springframework.util.FileSystemUtils;
+import org.xml.sax.InputSource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
+import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.io.InputStream;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class LandingZoneTestUtils extends Assert {
 
@@ -32,6 +26,8 @@ public class LandingZoneTestUtils extends Assert {
     public File lzDir;
     public String lzPathStr;
     public Path lzPath;
+
+    private XPathFactory xpathFactory = XPathFactory.newInstance();
 
     public LandingZoneTestUtils(String fileSystemPath) {
         lzDir = new File(fileSystemPath);
@@ -205,13 +201,20 @@ public class LandingZoneTestUtils extends Assert {
                     return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
                 }
             });
+
+
             for (File jar : files) {
                 ZipInputStream zis = new ZipInputStream(new FileInputStream(jar));
                 ZipEntry entry = null;
                 Integer lastFileNumber = 0;
                 while ((entry = zis.getNextEntry()) != null) {
                     logger.info("ZipEntry=" + entry.getName());
+                    StringBuilder s = new StringBuilder();
+                    byte[] buffer = new byte[1024];
 
+                    XPath xpath = xpathFactory.newXPath();
+
+                    int read = 0;
                     if (entry.getName().endsWith("data-status.xml")) {
                         // TODO: Verification of data
                     } else { 
@@ -221,7 +224,22 @@ public class LandingZoneTestUtils extends Assert {
                     			// ignore these are files related to the JAR being signed
                     	} else {                    	
 	                        assertTrue(String.format("Filename '%s' doesn't match data", entry.getName()), entry.getName().matches("/data/\\d+\\.xml"));
-	                        Integer newLastFileNumber = Integer.valueOf(entry.getName().replace("/data/", "").replace(".xml", ""));
+                            int len;
+                            while ((read = zis.read(buffer, 0, 1024)) >= 0) {
+                                s.append(new String(buffer, 0, read));
+                            }
+                            String contentXml = s.toString();
+                            InputSource contentInput = new InputSource(new StringReader(contentXml));
+
+
+                            String collections = xpath.evaluate(".//*[local-name(.) = 'DomainCollection']", contentInput);
+
+                            logger.info("collections=" + collections);
+                            assertTrue("Data is not in 'person' collection", collections.contains("person"));
+                            assertTrue("Data is not in 'datum' collection", collections.contains("datum"));
+                            assertTrue("Data is not in 'entity' collection", collections.contains("entity"));
+                            logger.info("ZipEntry contents=" + s.toString());
+                            Integer newLastFileNumber = Integer.valueOf(entry.getName().replace("/data/", "").replace(".xml", ""));
 	                        assertTrue("Files not in order at integer " + newLastFileNumber, newLastFileNumber > lastFileNumber);
 	                        lastFileNumber = newLastFileNumber;
 	                    }

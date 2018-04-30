@@ -46,8 +46,12 @@ public class ReceiveJobTest {
         lzUtils.stageTestDataToLandingZone("/test-data/receive/multiple-jars");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
         JobResult result = mgr.runJob();
-        for (int i = 1; i <= 50; i++)
-            dbUtils.assertDocumentExistsInCollection("/data/" + i + ".xml", "datum");
+        for (int i = 1; i <= 50; i++) {
+            String uri = "/data/" + i + ".xml";
+            dbUtils.assertDocumentExistsInCollection(uri, "datum");
+            dbUtils.assertDocumentExistsInCollection(uri, "person");
+            dbUtils.assertElementExistsInDocument(uri, String.format("/person/id[. = '%s']", i));
+        }
 
     }
 }
