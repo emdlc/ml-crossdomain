@@ -47,7 +47,7 @@ public class ReceiveJobTest {
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
         JobResult result = mgr.runJob();
         for (int i = 1; i <= 50; i++)
-            dbUtils.assertDocumentExistsInCollection("/data/" + i + ".xml", "person");
+            dbUtils.assertDocumentExistsInCollection("/data/" + i + ".xml", "datum");
 
     }
 }
