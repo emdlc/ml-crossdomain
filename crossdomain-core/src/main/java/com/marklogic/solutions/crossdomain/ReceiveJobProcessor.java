@@ -1,44 +1,27 @@
 package com.marklogic.solutions.crossdomain;
 
-import com.marklogic.solutions.crossdomain.jobs.receive.ReceiveItem;
 import com.marklogic.xcc.*;
-import com.marklogic.xcc.exceptions.RequestException;
 import com.marklogic.xcc.exceptions.XccConfigException;
 import org.apache.commons.io.FileUtils;
-import org.jdom2.input.JDOMParseException;
+import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.DOMOutputter;
+
+import javax.xml.xpath.XPathExpressionException;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Collections;
-
-import org.jdom2.DocType;
-import org.jdom2.Document;
-import org.jdom2.JDOMException;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
-import org.jdom2.output.*;
-import org.apache.log4j.Logger;
-
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 
 public class ReceiveJobProcessor extends JobProcessor<String> {
@@ -165,8 +148,8 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 	private void processFiles(ZipFile zipFile) throws XccConfigException, IOException, JDOMException, URISyntaxException {
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
-			ZipEntry entry = (ZipEntry) entries.nextElement();
-			String entryName = entry.getName();
+            ZipEntry entry = entries.nextElement();
+            String entryName = entry.getName();
 			if (entry.getName().endsWith(".xml")) {
 				xmlValidateAndIngest(zipFile, entry);
 			}
@@ -216,11 +199,17 @@ public class ReceiveJobProcessor extends JobProcessor<String> {
 			Element cdsDataElement = root.getChild(d, cds);
 			List allChildren = cdsDataElement.getChildren();
 			String firstChildName = ((Element)allChildren.get(0)).getName();
-			Namespace firstChildNamespace = ((Element)allChildren.get(0)).getNamespace();;
-			Element replicatedDoc = cdsDataElement.getChild(firstChildName, firstChildNamespace);
-			String[] collection = new String[] {root.getChildText("DomainCollection", cds)};
-			createOptions.setCollections((collection));
-			content = ContentFactory.newContent(root.getChildText("UniqueIdentifier", cds), outputter.output(replicatedDoc), createOptions);
+            Namespace firstChildNamespace = ((Element) allChildren.get(0)).getNamespace();
+            Element replicatedDoc = cdsDataElement.getChild(firstChildName, firstChildNamespace);
+            List<Element> collElements = root.getChildren("DomainCollection", cds);
+            String[] collections = new String[collElements.size()];
+            int pos = 0;
+            for (Element el : collElements) {
+                collections[pos++] = el.getText();
+            }
+
+            createOptions.setCollections(collections);
+            content = ContentFactory.newContent(root.getChildText("UniqueIdentifier", cds), outputter.output(replicatedDoc), createOptions);
 		} else {
 			//assumes only storing most recent status document
 			content = ContentFactory.newContent("cds-replication-status", outputter.output(document), createOptions);
