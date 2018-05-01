@@ -3,7 +3,9 @@ package com.marklogic.solutions.crossdomain;
 import com.marklogic.solutions.crossdomain.testutils.DatabaseTestUtils;
 import com.marklogic.solutions.crossdomain.testutils.LandingZoneTestUtils;
 import com.marklogic.solutions.utils.ClasspathUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,12 +48,17 @@ public class ReceiveJobTest {
         lzUtils.stageTestDataToLandingZone("/test-data/receive/multiple-jars");
         SimpleJobRunManager<String> mgr = new SimpleJobRunManager<String>(new ReceiveJobProcessor());
         JobResult result = mgr.runJob();
+        Assert.assertTrue("Status Document not found", !StringUtils.isBlank(dbUtils.executeXquery("declare namespace cds=\"http://marklogic.com/mlcs/cds\"; /cds:StatusEnvelope")));
+        Assert.assertTrue("Status Document Total Count not 51", dbUtils.executeXquery("declare namespace cds=\"http://marklogic.com/mlcs/cds\"; /cds:StatusEnvelope/cds:TotalCount/text()").equals("51"));
+        Assert.assertTrue("Status Document 'person' collection count not 50", dbUtils.executeXquery("declare namespace cds=\"http://marklogic.com/mlcs/cds\"; /cds:StatusEnvelope/cds:DomainCollection[. = 'person']/@count").equals("50"));
         for (int i = 1; i <= 50; i++) {
             String uri = "/data/" + i + ".xml";
             dbUtils.assertDocumentExistsInCollection(uri, "datum");
             dbUtils.assertDocumentExistsInCollection(uri, "person");
             dbUtils.assertDocumentExistsInCollection(uri, "entity");
             dbUtils.assertElementExistsInDocument(uri, String.format("/person/id[. = '%s']", i));
+
+
         }
 
     }
