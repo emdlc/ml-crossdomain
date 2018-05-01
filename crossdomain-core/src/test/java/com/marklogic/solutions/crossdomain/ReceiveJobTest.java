@@ -50,6 +50,7 @@ public class ReceiveJobTest {
             String uri = "/data/" + i + ".xml";
             dbUtils.assertDocumentExistsInCollection(uri, "datum");
             dbUtils.assertDocumentExistsInCollection(uri, "person");
+            dbUtils.assertDocumentExistsInCollection(uri, "entity");
             dbUtils.assertElementExistsInDocument(uri, String.format("/person/id[. = '%s']", i));
         }
 
