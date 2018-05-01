@@ -1,6 +1,6 @@
 declare namespace cds = "http://marklogic.com/mlcs/cds";
 
-declare variable $collections := ("person", "vehicle", "email-address");
+declare variable $collections := cts:collections();
 declare function local:buildStatusEnvelope() {
   let $metadata-document := 
     element { 'cds:StatusEnvelope' }
