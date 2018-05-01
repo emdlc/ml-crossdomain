@@ -1,6 +1,7 @@
 {
   "database-name" : "%%DATABASE%%",
   "maintain-last-modified": "true",
+  "collection-lexicon": "true",
   "range-element-index" : [ {
     "scalar-type" : "dateTime",
     "namespace-uri": "http://marklogic.com/xdmp/property",
